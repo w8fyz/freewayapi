@@ -8,3 +8,7 @@
 /var/
 /vendor/
 ###< symfony/framework-bundle ###
+.idea/vcs.xml
+.idea/php.xml
+.idea/modules.xml
+.idea/freewayapi.iml
