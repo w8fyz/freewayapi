@@ -3,37 +3,49 @@
 namespace App\Entity;
 
 use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\Post;
 use App\Repository\UserRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
+use Symfony\Component\Serializer\Annotation\Groups;
 
-#[ApiResource]
+#[ApiResource(
+    operations: [
+        new Get(normalizationContext: ['groups' => ['user:read']]),
+        new Post(denormalizationContext: ['groups' => ['user:create']]),
+    ],
+)]
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['user:read', 'project:read'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 180, unique: true)]
+    #[Groups(['user:read', 'user:create'])]
     private ?string $username = null;
 
     #[ORM\Column]
     private array $roles = [];
 
     #[ORM\Column]
+    #[Groups(['user:create'])]
     private ?string $password = null;
 
-    #[ORM\OneToMany(mappedBy: 'user', targetEntity: Article::class)]
-    private Collection $articles;
+    #[ORM\OneToMany(mappedBy: 'owner', targetEntity: Project::class)]
+    #[Groups(['user:read'])]
+    private Collection $projects;
 
     public function __construct()
     {
-        $this->articles = new ArrayCollection();
+        $this->projects = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -106,31 +118,25 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         // $this->plainPassword = null;
     }
 
-    /**
-     * @return Collection<int, Article>
-     */
-    public function getArticles(): Collection
+    public function getProjects(): Collection
     {
-        return $this->articles;
+        return $this->projects;
     }
 
-    public function addArticle(Article $article): self
+    public function addProject(Project $project): self
     {
-        if (!$this->articles->contains($article)) {
-            $this->articles->add($article);
-            $article->setUser($this);
+        if (!$this->projects->contains($project)) {
+            $this->projects[] = $project;
+            $project->setOwner($this);
         }
 
         return $this;
     }
 
-    public function removeArticle(Article $article): self
+    public function removeProject(Project $project): self
     {
-        if ($this->articles->removeElement($article)) {
-            // set the owning side to null (unless already changed)
-            if ($article->getUser() === $this) {
-                $article->setUser(null);
-            }
+        if ($this->projects->removeElement($project) && $project->getOwner() === $this) {
+            $project->setOwner(null);
         }
 
         return $this;
