@@ -26,9 +26,7 @@ class CurrentUserController extends AbstractController
         $this->security = $security;
     }
 
-    /**
-     * @Route("/api/user/me", name="me", methods={"GET"})
-     */
+    #[Route('/api/user/me', name: 'me', methods: ['GET'])]
     public function getCurrentUser(): JsonResponse
     {
         $user = $this->security->getUser();
@@ -41,4 +39,5 @@ class CurrentUserController extends AbstractController
         $contained['password'] = null;
         return $this->json($contained);
     }
+
 }
