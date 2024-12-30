@@ -3,40 +3,50 @@
 namespace App\Entity;
 
 use ApiPlatform\Metadata\ApiResource;
-use Symfony\Component\Serializer\Annotation\Groups;
+use ApiPlatform\Metadata\Delete;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\Post;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ApiResource(
-    normalizationContext: ['groups' => ['project:read']],
-    denormalizationContext: ['groups' => ['project:write']]
+    operations: [
+        new Get(normalizationContext: ['groups' => ['project:read']]),
+        new Post(
+            normalizationContext: ['groups' => ['project:read']],
+            denormalizationContext: ['groups' => ['project:create']]
+        ),
+        new Delete(denormalizationContext: ['groups' => ['project:create']]),
+    ]
 )]
+
 #[ORM\Entity]
 class Project
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
-    #[ORM\Column(type: 'integer')]
-    #[Groups(['project:read', 'user:read', 'task:read'])]
+    #[ORM\Column]
+    #[Groups(['project:read', 'user:read', 'category:read'])]
     private ?int $id = null;
 
-    #[ORM\Column(type: 'string', length: 255)]
-    #[Groups(['project:read', 'project:write'])]
+    #[ORM\Column(length: 255)]
+    #[Groups(['project:read', 'project:create'])]
     private ?string $name = null;
 
     #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'projects')]
-    #[ORM\JoinColumn(nullable: false)]
     #[Groups(['project:read'])]
+    #[ORM\JoinColumn(nullable: false)]
     private ?User $owner = null;
 
-    #[ORM\OneToMany(mappedBy: 'project', targetEntity: Task::class, cascade: ['persist', 'remove'])]
+    #[ORM\OneToMany(mappedBy: 'project', targetEntity: Category::class)]
     #[Groups(['project:read'])]
-    private Collection $tasks;
+    private Collection $categories;
 
     public function __construct()
     {
-        $this->tasks = new ArrayCollection();
+        $this->categories = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -68,25 +78,25 @@ class Project
         return $this;
     }
 
-    public function getTasks(): Collection
+    public function getCategories(): Collection
     {
-        return $this->tasks;
+        return $this->categories;
     }
 
-    public function addTask(Task $task): self
+    public function addCategory(Category $category): self
     {
-        if (!$this->tasks->contains($task)) {
-            $this->tasks[] = $task;
-            $task->setProject($this);
+        if (!$this->categories->contains($category)) {
+            $this->categories[] = $category;
+            $category->setProject($this);
         }
 
         return $this;
     }
 
-    public function removeTask(Task $task): self
+    public function removeCategory(Category $category): self
     {
-        if ($this->tasks->removeElement($task) && $task->getProject() === $this) {
-            $task->setProject(null);
+        if ($this->categories->removeElement($category) && $category->getProject() === $this) {
+            $category->setProject(null);
         }
 
         return $this;

@@ -3,30 +3,46 @@
 namespace App\Entity;
 
 use ApiPlatform\Metadata\ApiResource;
-use Symfony\Component\Serializer\Annotation\Groups;
+use ApiPlatform\Metadata\Delete;
+use ApiPlatform\Metadata\Post;
+use \ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\Put;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ApiResource(
-    normalizationContext: ['groups' => ['task:read']],
-    denormalizationContext: ['groups' => ['task:write']]
+    operations: [
+        new Get(
+            normalizationContext: ['groups' => ['task:read']]),
+        new Post(denormalizationContext: ['groups' => ['task:create']]),
+        new Delete(denormalizationContext: ['groups' => ['task:create']]),
+        new Put()
+    ]
 )]
 #[ORM\Entity]
 class Task
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
-    #[ORM\Column(type: 'integer')]
-    #[Groups(['task:read', 'project:read'])]
+    #[ORM\Column]
+    #[Groups(['task:read', 'project:read', 'category:create', 'category:read', 'project:read'])]
     private ?int $id = null;
 
-    #[ORM\Column(type: 'string', length: 255)]
-    #[Groups(['task:read', 'task:write'])]
+    #[ORM\Column(length: 255)]
+    #[Groups(['task:read', 'task:write', 'task:create', 'category:create', 'category:read', 'project:read'])]
     private ?string $title = null;
 
-    #[ORM\ManyToOne(targetEntity: Project::class, inversedBy: 'tasks')]
-    #[ORM\JoinColumn(nullable: false)]
-    #[Groups(['task:read', 'task:write'])]
-    private ?Project $project = null;
+    #[ORM\Column(type: 'text', nullable: true)]
+    #[Groups(['task:read', 'task:write', 'category:create', 'category:read', 'project:read'])]
+    private ?string $details = null;
+
+    #[ORM\Column(type: 'boolean')]
+    #[Groups(['task:read', 'task:write','category:create', 'category:read', 'project:read'])]
+    private bool $completed = false;
+
+    #[ORM\ManyToOne(targetEntity: Category::class, inversedBy: 'tasks')]
+    #[Groups(['task:read', 'task:create'])]
+    private ?Category $category = null;
 
     public function getId(): ?int
     {
@@ -45,14 +61,38 @@ class Task
         return $this;
     }
 
-    public function getProject(): ?Project
+    public function getDetails(): ?string
     {
-        return $this->project;
+        return $this->details;
     }
 
-    public function setProject(?Project $project): self
+    public function setDetails(?string $details): self
     {
-        $this->project = $project;
+        $this->details = $details;
+
+        return $this;
+    }
+
+    public function isCompleted(): bool
+    {
+        return $this->completed;
+    }
+
+    public function setCompleted(bool $completed): self
+    {
+        $this->completed = $completed;
+
+        return $this;
+    }
+
+    public function getCategory(): ?Category
+    {
+        return $this->category;
+    }
+
+    public function setCategory(?Category $category): self
+    {
+        $this->category = $category;
 
         return $this;
     }
