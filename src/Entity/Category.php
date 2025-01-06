@@ -45,7 +45,6 @@ class Category
     public function __construct()
     {
         $this->tasks = new ArrayCollection();
-        $this->tasks->add(new Task());
     }
 
     public function getId(): ?int
